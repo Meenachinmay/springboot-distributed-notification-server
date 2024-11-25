@@ -1,0 +1,10 @@
+spring:
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+  web:
+    resources:
+      static-locations: classpath:/static/
+server:
+  port: ${SERVER_PORT:8080}
