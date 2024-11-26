@@ -1,21 +1,33 @@
 package org.polarmeet.redisdistributedserver.service
 
+import kotlinx.coroutines.reactor.awaitSingle
 import org.polarmeet.redisdistributedserver.model.Notification
-import org.springframework.data.redis.connection.MessageListener
-import org.springframework.messaging.simp.SimpMessagingTemplate
+import org.springframework.data.redis.connection.ReactiveSubscription
+import org.springframework.data.redis.core.ReactiveRedisTemplate
+import org.springframework.data.redis.listener.PatternTopic
 import org.springframework.stereotype.Service
+import reactor.core.publisher.Flux
+
 
 @Service
-class RedisMessageSubscriber(
-    private val messagingTemplate: SimpMessagingTemplate
-) : MessageListener {
+class ReactiveRedisService(
+    private val redisTemplate: ReactiveRedisTemplate<String, Any>
+) {
+    companion object {
+        const val NOTIFICATION_CHANNEL = "notifications"
+    }
 
-    override fun onMessage(message: org.springframework.data.redis.connection.Message, pattern: ByteArray?) {
-        val notification = Notification(
-            message = String(message.body)
-        )
+    fun subscribeToNotifications(): Flux<out ReactiveSubscription.Message<String, Any>> {
+        return redisTemplate.listenTo(PatternTopic(NOTIFICATION_CHANNEL))
+    }
 
-        // Broadcast to all connected WebSocket clients
-        messagingTemplate.convertAndSend("/topic/notifications", notification)
+    suspend fun publishNotification(message: String): Boolean {
+        val notification = Notification(message)
+        return try {
+            redisTemplate.convertAndSend(NOTIFICATION_CHANNEL, notification)
+                .awaitSingle() > 0 // Convert Long to Boolean
+        } catch (e: Exception) {
+            false
+        }
     }
 }
