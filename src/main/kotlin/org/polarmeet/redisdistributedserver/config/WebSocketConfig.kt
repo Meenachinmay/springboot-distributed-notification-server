@@ -1,29 +1,24 @@
 package org.polarmeet.redisdistributedserver.config
 
 import org.springframework.context.annotation.Configuration
-import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker
-import org.springframework.web.socket.config.annotation.StompEndpointRegistry
-import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer
-import org.springframework.messaging.simp.config.MessageBrokerRegistry
+import org.springframework.context.annotation.Bean
+import org.springframework.web.reactive.HandlerMapping
+import org.springframework.web.reactive.handler.SimpleUrlHandlerMapping
+import org.springframework.web.reactive.socket.server.support.WebSocketHandlerAdapter
 
 @Configuration
-@EnableWebSocketMessageBroker
-class WebSocketConfig : WebSocketMessageBrokerConfigurer {
-
-    override fun configureMessageBroker(registry: MessageBrokerRegistry) {
-        registry.enableSimpleBroker("/topic")
-        registry.setApplicationDestinationPrefixes("/app")
+class WebSocketConfig {
+    @Bean
+    fun webSocketHandlerMapping(
+        notificationWebSocketHandler: NotificationWebSocketHandler
+    ): HandlerMapping {
+        val map = mapOf("/ws" to notificationWebSocketHandler)
+        val mapping = SimpleUrlHandlerMapping()
+        mapping.urlMap = map
+        mapping.order = -1
+        return mapping
     }
 
-    override fun registerStompEndpoints(registry: StompEndpointRegistry) {
-        registry
-            .addEndpoint("/ws")
-            .setAllowedOriginPatterns("*")  // For development
-
-        registry
-            .addEndpoint("/ws")
-            .setAllowedOrigins("http://localhost:3000")
-            .setAllowedOriginPatterns("*")
-            .withSockJS()
-    }
+    @Bean
+    fun handlerAdapter() = WebSocketHandlerAdapter()
 }

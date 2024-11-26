@@ -1,19 +1,23 @@
 package org.polarmeet.redisdistributedserver.controller
 
-import org.springframework.data.redis.core.RedisTemplate
+import org.polarmeet.redisdistributedserver.service.ReactiveRedisService
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/notifications")
 class NotificationController(
-    private val redisTemplate: RedisTemplate<String, Any>
+    private val redisService: ReactiveRedisService
 ) {
     @PostMapping("/publish")
-    fun publishMessage(@RequestBody message: String): String {
-        redisTemplate.convertAndSend("notifications", message)
-        return "Message published: $message"
+    suspend fun publishMessage(@RequestBody message: String): String {
+        val published = redisService.publishNotification(message)
+        return if (published) {
+            "Message published: $message"
+        } else {
+            "Failed to publish message"
+        }
     }
 
     @GetMapping("/test")
-    fun test() = "Service running on port: ${System.getenv("SERVER_PORT") ?: "8080"}"
+    suspend fun test() = "Service running on port: ${System.getenv("SERVER_PORT") ?: "8080"}"
 }
