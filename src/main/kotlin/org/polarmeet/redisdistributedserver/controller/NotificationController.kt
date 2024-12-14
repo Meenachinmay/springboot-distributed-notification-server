@@ -1,5 +1,6 @@
 package org.polarmeet.redisdistributedserver.controller
 
+import org.polarmeet.redisdistributedserver.model.NotificationType
 import org.polarmeet.redisdistributedserver.service.ReactiveRedisService
 import org.springframework.web.bind.annotation.*
 
@@ -9,10 +10,14 @@ class NotificationController(
     private val redisService: ReactiveRedisService
 ) {
     @PostMapping("/publish")
-    suspend fun publishMessage(@RequestBody message: String): String {
-        val published = redisService.publishNotification(message)
+    suspend fun publishMessage(
+        @RequestBody message: String,
+        @RequestParam type: NotificationType = NotificationType.GENERAL
+    ): String {
+        println("Publishing message to type: $type") // Added logging
+        val published = redisService.publishNotification(message, type)
         return if (published) {
-            "Message published: $message"
+            "Message published to ${type.name} channel: $message"
         } else {
             "Failed to publish message"
         }
